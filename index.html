@@ -448,7 +448,13 @@ function render(d) {
 
   $('#audience').textContent = d.audience ? `${fmt(d.audience)} combined audience` : '';
 
-  $('#warnings').innerHTML = d.warnings.map(w => `<div class="warn">${escapeHtml(w)}</div>`).join('');
+  // Instagram's profile lookup always fails from the server (Meta blocks
+  // datacenter IPs), so that isn't news — it's how the tool works. The card
+  // already says "followers unavailable" next to the field that fixes it, so
+  // don't spend a warning banner on it every single search.
+  const EXPECTED = /^Instagram: couldn't read the profile/;
+  const shown = d.warnings.filter(w => !EXPECTED.test(w));
+  $('#warnings').innerHTML = shown.map(w => `<div class="warn">${escapeHtml(w)}</div>`).join('');
 
   // Platform breakdown
   const share = Object.fromEntries(b.contributions.map(c => [c.platform, c.share]));
@@ -567,9 +573,10 @@ function summaryText(d) {
     lines.push(`  Consistency: ${t.consistency.cv.toFixed(2)} — ${t.consistency.grade.label}`);
   }
 
-  if (d.warnings.length) {
+  const flags = d.warnings.filter(w => !/^Instagram: couldn't read the profile/.test(w));
+  if (flags.length) {
     lines.push('', 'FLAGS');
-    for (const w of d.warnings) lines.push(`  - ${w}`);
+    for (const w of flags) lines.push(`  - ${w}`);
   }
   return lines.join('\n');
 }
