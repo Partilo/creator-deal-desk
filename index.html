@@ -475,7 +475,7 @@ function render(d) {
         <label for="igAvg">Avg views per Reel</label>
         <input id="igAvg" type="number" min="0" step="1000" placeholder="e.g. 45000"
                value="${opts.igAvgViews || ''}" />
-        <span class="igNote">Instagram publishes no public view counts — ask the creator or check their media kit.</span>
+        <span class="igNote">Instagram only shows Reel views to a signed-in session, so a server can't read them — ask the creator or check their media kit.</span>
       </div>` : ''}
     </div>`;
   }).join('');
