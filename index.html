@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Creator Deal Desk</title>
+<style>
+:root{
+  --bg:#0b0c0f; --panel:#15171c; --panel2:#1b1e25; --line:#262a33;
+  --ink:#e9ebef; --mute:#8e94a1; --dim:#636a78;
+  --accent:#5b8cff;
+  --great:#34d399; --good:#a3e635; --ok:#fbbf24; --bad:#f87171;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+.hidden{display:none !important}
+.muted{color:var(--mute);font-size:13px}
+
+/* ---------- search bar ---------- */
+.bar{position:sticky;top:0;z-index:20;background:rgba(11,12,15,.92);
+  backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line);padding:18px 0 16px}
+.bar h1{margin:0 0 12px;font-size:15px;font-weight:600;letter-spacing:.02em;color:var(--mute)}
+#search{display:flex;gap:10px;align-items:flex-end}
+.fields{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;min-width:0}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:650}
+.f-tiktok>span{color:#25f4ee}
+.f-instagram>span{color:#e1719c}
+.f-youtube>span{color:#ff5a5a}
+.field input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;color:var(--ink);font-size:14px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--dim)}
+#go{background:var(--accent);border:0;border-radius:10px;color:#fff;font-size:15px;font-weight:600;
+  padding:11px 22px;cursor:pointer;transition:filter .15s;flex:none}
+#go:hover{filter:brightness(1.1)}
+#go:disabled{opacity:.5;cursor:default}
+.hint{margin:9px 2px 0;font-size:12.5px;color:var(--dim)}
+
+/* ---------- states ---------- */
+.empty{padding:90px 0;text-align:center;color:var(--mute)}
+.empty p{margin:0 0 8px;font-size:17px}
+.empty .sub{font-size:14px;color:var(--dim);max-width:460px;margin:0 auto}
+.loading{padding:80px 0;text-align:center;color:var(--mute)}
+.spinner{width:26px;height:26px;margin:0 auto 14px;border:2.5px solid var(--line);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error{margin:34px 0;padding:18px 20px;background:rgba(248,113,113,.09);
+  border:1px solid rgba(248,113,113,.3);border-radius:var(--radius);color:#fca5a5}
+
+/* ---------- cards ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;margin:16px 0}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin:-2px 0 16px;flex-wrap:wrap}
+.cardhead h2{margin:0;font-size:14px;font-weight:600;color:var(--mute);letter-spacing:.02em}
+
+/* ---------- profile ---------- */
+.profile{display:flex;align-items:center;gap:16px;margin-top:22px;flex-wrap:wrap}
+.profile img{width:56px;height:56px;border-radius:50%;background:var(--panel2);flex:none;object-fit:cover}
+.who{flex:1;min-width:190px}
+.name{font-size:17px;font-weight:650;display:flex;align-items:center;gap:6px}
+.tick{color:var(--accent);font-size:12px}
+.handle{color:var(--mute);font-size:13.5px;text-decoration:none}
+.handle:hover{color:var(--accent)}
+.bio{color:var(--dim);font-size:12.5px;margin-top:4px;max-width:420px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profstats{display:flex;gap:26px;flex-wrap:wrap}
+.profstats div{text-align:right}
+.profstats b{display:block;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+.profstats span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- hero ---------- */
+.hero{display:flex;gap:28px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:linear-gradient(160deg,#181d2b,#14161c);border-color:#2c3448}
+.heroMain{min-width:250px}
+.hero .label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute)}
+.hero .big{font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:4px 0 6px;
+  font-variant-numeric:tabular-nums;color:#fff}
+.hero .formula{font-size:13.5px;color:var(--mute)}
+.heroSide{display:flex;gap:22px;flex-wrap:wrap}
+.knob label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--dim);margin-bottom:6px}
+#ppm{width:74px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:9px 11px;color:var(--ink);font-size:15px;outline:none;font-variant-numeric:tabular-nums}
+#ppm:focus{border-color:var(--accent)}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--mute);padding:9px 13px;font-size:13px;
+  cursor:pointer;transition:background .15s,color .15s}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+
+/* ---------- warnings ---------- */
+.warn{display:flex;gap:11px;padding:13px 16px;margin:10px 0;border-radius:11px;font-size:13.5px;
+  background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.26);color:#fcd77a;line-height:1.5}
+.warn::before{content:"!";flex:none;width:17px;height:17px;border-radius:50%;margin-top:2px;
+  background:rgba(251,191,36,.9);color:#231b02;font-size:12px;font-weight:700;
+  display:grid;place-items:center}
+
+/* ---------- grades ---------- */
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.grades .card{margin:0}
+.gtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.glabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.gpill{font-size:11.5px;font-weight:650;padding:3px 9px;border-radius:20px}
+.gval{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.gnote{font-size:12.5px;color:var(--mute);margin-top:7px;line-height:1.45}
+.t-great{color:var(--great)} .t-good{color:var(--good)}
+.t-ok{color:var(--ok)}       .t-bad{color:var(--bad)}
+.p-great{background:rgba(52,211,153,.15);color:var(--great)}
+.p-good{background:rgba(163,230,53,.15);color:var(--good)}
+.p-ok{background:rgba(251,191,36,.15);color:var(--ok)}
+.p-bad{background:rgba(248,113,113,.15);color:var(--bad)}
+
+/* ---------- stats ---------- */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:16px}
+.statgrid div{background:var(--panel2);border-radius:10px;padding:12px 13px}
+.statgrid b{display:block;font-size:19px;font-weight:650;font-variant-numeric:tabular-nums}
+.statgrid span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.basisrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.basisrow span{font-size:12.5px;color:var(--mute);background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+.basisrow span.on{border-color:var(--accent);color:var(--ink)}
+.windownote{margin-top:13px;font-size:12.5px;color:var(--dim);line-height:1.5}
+.windowctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--mute)}
+#win{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
+  padding:6px 9px;font-size:13px;outline:none}
+.chk{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--mute)}
+.chk input{accent-color:var(--accent)}
+
+/* ---------- posts ---------- */
+.posts{display:flex;flex-direction:column;gap:2px}
+.post{display:grid;grid-template-columns:78px 1fr 92px 66px;gap:12px;align-items:center;
+  padding:9px 10px;border-radius:9px;font-size:13px}
+.post:hover{background:var(--panel2)}
+.post.out{opacity:.4}
+.pdate{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums}
+.pbarwrap{min-width:0}
+.pcap{color:var(--mute);font-size:12px;margin-bottom:5px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.pbar{height:6px;border-radius:3px;background:var(--accent);min-width:3px}
+.post.out .pbar{background:var(--dim)}
+.pviews{text-align:right;font-weight:650;font-variant-numeric:tabular-nums}
+.per{text-align:right;color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums}
+.ptag{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+
+/* ---------- summary ---------- */
+.feerow{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mute)}
+#fee{width:96px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;color:var(--ink);font-size:13px;outline:none}
+.summary{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px;
+  font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);
+  white-space:pre-wrap;margin:0}
+.copy{margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  color:var(--ink);padding:9px 16px;font-size:13.5px;cursor:pointer;transition:border-color .15s}
+.copy:hover{border-color:var(--accent)}
+
+@media(max-width:720px){
+  .grades{grid-template-columns:1fr}
+  .hero .big{font-size:42px}
+  .post{grid-template-columns:62px 1fr 78px;}
+  .per{display:none}
+}
+
+
+/* ---------- pricing ---------- */
+.pricing{padding:18px 20px}
+.priceRow{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+#cpm{width:96px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:9px 11px;color:var(--ink);font-size:15px;outline:none;font-variant-numeric:tabular-nums}
+#cpm:focus{border-color:var(--accent)}
+.arrow{color:var(--dim);font-size:18px}
+.feeOut .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.feeBig{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--great);
+  letter-spacing:-.01em;line-height:1.2}
+.feeSub{font-size:12.5px;color:var(--mute);margin-top:2px}
+
+/* ---------- platform cards ---------- */
+.platforms{display:flex;flex-direction:column;gap:11px}
+.plat{display:grid;grid-template-columns:40px 1fr auto;gap:13px;align-items:center;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.plat.dim{opacity:.55}
+.plat img{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--panel)}
+.platwho{min-width:0}
+.platname{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600}
+.ptag{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 7px;border-radius:5px}
+.ptag.tiktok{background:rgba(37,244,238,.15);color:#25f4ee}
+.ptag.instagram{background:rgba(225,113,156,.15);color:#e1719c}
+.ptag.youtube{background:rgba(255,90,90,.15);color:#ff5a5a}
+.platmeta{font-size:12px;color:var(--dim);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.platnum{text-align:right}
+.platnum b{display:block;font-size:19px;font-weight:650;font-variant-numeric:tabular-nums}
+.platnum span{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.sharebar{grid-column:1/-1;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.sharebar i{display:block;height:100%;border-radius:2px}
+.sharebar i.tiktok{background:#25f4ee}
+.sharebar i.instagram{background:#e1719c}
+.sharebar i.youtube{background:#ff5a5a}
+.igInput{grid-column:1/-1;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  padding-top:4px;font-size:12.5px;color:var(--mute)}
+.igInput input{width:120px;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:7px 10px;color:var(--ink);font-size:13px;outline:none;font-variant-numeric:tabular-nums}
+.igInput input:focus{border-color:var(--accent)}
+.igNote{font-size:11.5px;color:var(--dim)}
+
+@media(max-width:720px){
+  #search{flex-direction:column;align-items:stretch}
+  .fields{grid-template-columns:1fr}
+  #go{width:100%}
+  .plat{grid-template-columns:36px 1fr}
+  .platnum{grid-column:2/-1;text-align:left;margin-top:4px}
+}
+
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <h1>Creator Deal Desk</h1>
+    <form id="search" autocomplete="off">
+      <div class="fields">
+        <label class="field f-tiktok">
+          <span>TikTok</span>
+          <input id="in-tiktok" type="text" placeholder="link or @handle" spellcheck="false" />
+        </label>
+        <label class="field f-instagram">
+          <span>Instagram</span>
+          <input id="in-instagram" type="text" placeholder="link or @handle" spellcheck="false" />
+        </label>
+        <label class="field f-youtube">
+          <span>YouTube</span>
+          <input id="in-youtube" type="text" placeholder="link or @handle" spellcheck="false" />
+        </label>
+      </div>
+      <button id="go" type="submit">Analyze</button>
+    </form>
+    <p class="hint">Fill in whichever they have. One post a week, cross-posted — the guarantee blends every platform you enter.</p>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <section id="empty" class="empty">
+    <p>Paste the creator's handles above.</p>
+    <p class="sub">You'll get each platform's average views per post, blended into one
+      cross-post guarantee and priced at your CPM — ready to copy into your notes.</p>
+  </section>
+
+  <section id="loading" class="hidden loading">
+    <div class="spinner"></div>
+    <p>Pulling recent posts…</p>
+  </section>
+
+  <section id="error" class="hidden error"></section>
+
+  <section id="result" class="hidden">
+
+    <div class="hero card">
+      <div class="heroMain">
+        <div class="label">Monthly view guarantee</div>
+        <div class="big" id="monthly">—</div>
+        <div class="formula" id="formula"></div>
+      </div>
+      <div class="heroSide">
+        <div class="knob">
+          <label for="ppm">Posts / month</label>
+          <input id="ppm" type="number" min="1" max="31" value="4" />
+        </div>
+        <div class="knob">
+          <label>Guarantee basis</label>
+          <div class="seg" id="basis">
+            <button type="button" data-v="mean">Mean</button>
+            <button type="button" data-v="trimmed" class="on">Trimmed</button>
+            <button type="button" data-v="median">Median</button>
+            <button type="button" data-v="floor">Floor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pricing">
+      <div class="priceRow">
+        <div class="knob">
+          <label for="cpm">Target CPM $</label>
+          <input id="cpm" type="number" min="0" step="0.5" value="3" />
+        </div>
+        <div class="arrow">→</div>
+        <div class="feeOut">
+          <div class="label">What you pay</div>
+          <div class="feeBig" id="fee">—</div>
+          <div class="feeSub" id="feeSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="warnings"></div>
+
+    <div class="card">
+      <div class="cardhead">
+        <h2>Where the reach comes from</h2>
+        <span class="muted" id="audience"></span>
+      </div>
+      <div id="platforms" class="platforms"></div>
+    </div>
+
+    <div id="ttDetail" class="hidden">
+      <div class="grades">
+        <div class="card grade" id="gEng">
+          <div class="gtop"><span class="glabel">TikTok engagement</span><span class="gpill"></span></div>
+          <div class="gval"></div><div class="gnote"></div>
+        </div>
+        <div class="card grade" id="gReach">
+          <div class="gtop"><span class="glabel">TikTok reach</span><span class="gpill"></span></div>
+          <div class="gval"></div><div class="gnote"></div>
+        </div>
+        <div class="card grade" id="gCons">
+          <div class="gtop"><span class="glabel">TikTok consistency</span><span class="gpill"></span></div>
+          <div class="gval"></div><div class="gnote"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardhead">
+          <h2>TikTok posts</h2>
+          <div class="windowctl">
+            <label for="win">Window</label>
+            <select id="win">
+              <option value="">Auto</option>
+              <option value="30">30 days</option>
+              <option value="60">60 days</option>
+              <option value="90">90 days</option>
+              <option value="3650">All posts</option>
+            </select>
+            <label class="chk"><input type="checkbox" id="fresh" /> count posts &lt;3 days old</label>
+          </div>
+        </div>
+        <div class="statgrid" id="statgrid"></div>
+        <div class="windownote" id="windownote"></div>
+        <div id="posts" class="posts"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead"><h2>Deal summary</h2></div>
+      <pre id="summary" class="summary"></pre>
+      <button id="copy" class="copy" type="button">Copy summary</button>
+    </div>
+
+  </section>
+</main>
+
+<script>window.__API__ = "https://awobhxuvbwhmyddmbsht.supabase.co/functions/v1/creator-deals";</script>
+<script>
+/* Creator Deal Desk — front end. */
+
+const $ = s => document.querySelector(s);
+const el = {
+  form: $('#search'), go: $('#go'),
+  tiktok: $('#in-tiktok'), instagram: $('#in-instagram'), youtube: $('#in-youtube'),
+  empty: $('#empty'), loading: $('#loading'), error: $('#error'), result: $('#result'),
+  ppm: $('#ppm'), basis: $('#basis'), cpm: $('#cpm'),
+  win: $('#win'), fresh: $('#fresh'),
+};
+
+let searched = null;   // the handles we last analyzed
+let opts = {
+  basis: 'trimmed', postsPerMonth: 4, cpm: 3,
+  igAvgViews: null, windowDays: '', includeFresh: false,
+};
+
+const PLATFORM_LABEL = { tiktok: 'TikTok', instagram: 'Instagram', youtube: 'YouTube' };
+
+// ---------- formatting ----------
+function fmt(n) {
+  if (!Number.isFinite(n)) return '—';
+  if (n >= 1e9) return (n / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(n));
+}
+const full = n => Number.isFinite(n) ? Math.round(n).toLocaleString('en-US') : '—';
+const money = n => Number.isFinite(n)
+  ? '
+</body>
+</html>
+ + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+const pct = n => Number.isFinite(n) ? (n * 100).toFixed(1) + '%' : '—';
+const day = ts => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const dayYear = ts => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ---------- request ----------
+async function run(handles, { refresh = false } = {}) {
+  searched = handles;
+  show('loading');
+  el.go.disabled = true;
+  try {
+    const endpoint = window.__API__ || (location.pathname + location.search);
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...handles, refresh, ...opts }),
+    });
+    const data = await res.json();
+    if (!data.ok) { fail(data.error || 'Nothing could be measured.'); return; }
+    render(data);
+    show('result');
+  } catch {
+    fail('Could not reach the analysis service. Try again in a moment.');
+  } finally {
+    el.go.disabled = false;
+  }
+}
+
+/** Re-run with new knobs — scrapes are cached server-side, so this is instant. */
+function rerun() { if (searched) run(searched); }
+
+function show(which) {
+  for (const k of ['empty', 'loading', 'error', 'result']) el[k].classList.add('hidden');
+  el[which].classList.remove('hidden');
+}
+function fail(msg) { el.error.textContent = msg; show('error'); }
+
+// ---------- render ----------
+function render(d) {
+  const b = d.blended;
+
+  $('#monthly').textContent = full(b.monthly);
+  const names = d.platforms.filter(p => p.perPost > 0).map(p => PLATFORM_LABEL[p.platform]);
+  $('#formula').textContent =
+    `${b.postsPerMonth} cross-posts × ${full(b.perPost)} blended views` +
+    (names.length ? ` across ${names.join(' + ')}` : '') +
+    ` (${b.basis})`;
+
+  // Pricing
+  $('#fee').textContent = d.pricing.fee ? money(d.pricing.fee) : '—';
+  $('#feeSub').textContent = d.pricing.fee
+    ? `${money(d.pricing.fee / b.postsPerMonth)} per cross-post · ${full(b.monthly)} guaranteed views`
+    : 'Enter a target CPM';
+
+  $('#audience').textContent = d.audience ? `${fmt(d.audience)} combined audience` : '';
+
+  $('#warnings').innerHTML = d.warnings.map(w => `<div class="warn">${escapeHtml(w)}</div>`).join('');
+
+  // Platform breakdown
+  const share = Object.fromEntries(b.contributions.map(c => [c.platform, c.share]));
+  $('#platforms').innerHTML = d.platforms.map(p => {
+    const isIg = p.platform === 'instagram';
+    const dim = p.perPost > 0 ? '' : ' dim';
+    const pctShare = share[p.platform] ? (share[p.platform] * 100).toFixed(0) + '% of reach' : 'not counted';
+    return `<div class="plat${dim}">
+      <img src="${escapeHtml(p.avatar || '')}" alt="" onerror="this.style.visibility='hidden'" />
+      <div class="platwho">
+        <div class="platname"><span class="ptag ${p.platform}">${PLATFORM_LABEL[p.platform]}</span>
+          <a href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer" class="handle">@${escapeHtml(p.handle)}</a></div>
+        <div class="platmeta">${p.followersKnown === false ? 'followers unavailable' : `${fmt(p.followers)} ${p.followerLabel || 'followers'}`} · ${escapeHtml(p.sampleNote)} · ${pctShare}</div>
+      </div>
+      <div class="platnum"><b>${fmt(p.perPost)}</b><span>per post</span></div>
+      ${share[p.platform] ? `<div class="sharebar"><i class="${p.platform}" style="width:${(share[p.platform] * 100).toFixed(1)}%"></i></div>` : ''}
+      ${isIg ? `<div class="igInput">
+        <label for="igAvg">Avg views per Reel</label>
+        <input id="igAvg" type="number" min="0" step="1000" placeholder="e.g. 45000"
+               value="${opts.igAvgViews || ''}" />
+        <span class="igNote">Instagram publishes no public view counts — ask the creator or check their media kit.</span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  const igAvg = $('#igAvg');
+  if (igAvg) {
+    igAvg.addEventListener('change', () => {
+      opts.igAvgViews = Number(igAvg.value) > 0 ? Number(igAvg.value) : null;
+      rerun();
+    });
+  }
+
+  renderTikTok(d.tiktokDetail);
+  $('#summary').textContent = summaryText(d);
+}
+
+function renderTikTok(t) {
+  const box = $('#ttDetail');
+  if (!t || !t.ok) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+
+  grade('#gEng', pct(t.engagement.rate), t.engagement.grade);
+  grade('#gReach', t.reach.viewsPerFollower.toFixed(2) + '×', t.reach.grade);
+  grade('#gCons', t.consistency.cv.toFixed(2), t.consistency.grade);
+
+  const v = t.views;
+  $('#statgrid').innerHTML = [
+    ['Average', v.avg], ['Median', v.median], ['Trimmed', v.trimmed],
+    ['Floor (p25)', v.floor], ['Best', v.best], ['Worst', v.worst],
+  ].map(([k, n]) => `<div><b>${fmt(n)}</b><span>${k}</span></div>`).join('') +
+    `<div><b>${t.cadence.postsPerWeek ? t.cadence.postsPerWeek.toFixed(1) : '—'}</b><span>posts/week</span></div>`;
+
+  const w = t.window;
+  $('#windownote').textContent =
+    `${w.counted} post${w.counted === 1 ? '' : 's'} from ${dayYear(w.from)} to ${dayYear(w.to)}.` +
+    (w.dormant ? ' No posts at all in the last 90 days.'
+      : w.autoWidened ? ` Widened to ${w.days} days — too few posts in the last 30.` : '') +
+    (w.held ? ` ${w.held} under 3 days old held out (still climbing).` : '');
+
+  const max = Math.max(...t.posts.map(x => x.views), 1);
+  $('#posts').innerHTML = t.posts.map(x => {
+    const er = x.exact && x.views ? (x.likes + x.comments + x.shares) / x.views : null;
+    return `<div class="post ${x.counted ? '' : 'out'}">
+      <div class="pdate">${x.postedAt ? day(x.postedAt) : '—'}</div>
+      <div class="pbarwrap">
+        <div class="pcap">${escapeHtml(x.caption || '(no caption)')}${
+          x.counted ? '' : ` <span class="ptag">· ${x.reason}</span>`}</div>
+        <div class="pbar" style="width:${Math.max(3, (x.views / max) * 100)}%"></div>
+      </div>
+      <div class="pviews">${fmt(x.views)}</div>
+      <div class="per">${er === null ? '—' : pct(er)}</div>
+    </div>`;
+  }).join('');
+}
+
+function grade(sel, value, g) {
+  const node = $(sel);
+  node.querySelector('.gval').textContent = value;
+  node.querySelector('.gval').className = 'gval t-' + g.tone;
+  const pill = node.querySelector('.gpill');
+  pill.textContent = g.label;
+  pill.className = 'gpill p-' + g.tone;
+  node.querySelector('.gnote').textContent = g.note;
+}
+
+function summaryText(d) {
+  const b = d.blended;
+  const lines = [];
+  const named = d.platforms.map(p => `${PLATFORM_LABEL[p.platform]} @${p.handle}`).join('  ·  ');
+  lines.push(named, '');
+
+  lines.push('DEAL');
+  lines.push(`  ${b.postsPerMonth} posts/month, 1 per week, cross-posted`);
+  lines.push(`  Blended per post:     ${full(b.perPost)} views   (${b.basis})`);
+  lines.push(`  MONTHLY GUARANTEE:    ${full(b.monthly)} views`);
+  if (d.pricing.fee) {
+    lines.push(`  Fee:                  ${money(d.pricing.fee)}  (${money(d.pricing.cpm)} CPM)`);
+    lines.push(`  Per cross-post:       ${money(d.pricing.fee / b.postsPerMonth)}`);
+  }
+
+  lines.push('', 'PER PLATFORM');
+  for (const p of d.platforms) {
+    lines.push(
+      `  ${PLATFORM_LABEL[p.platform].padEnd(10)} @${p.handle}` +
+      `\n    ${full(p.perPost)} views/post · ` +
+      `${p.followersKnown === false ? 'followers n/a' : `${full(p.followers)} ${p.followerLabel || 'followers'}`} · ${p.sampleNote}`
+    );
+  }
+
+  const t = d.tiktokDetail;
+  if (t && t.ok) {
+    lines.push('', 'TIKTOK READ');
+    lines.push(`  Engagement:  ${pct(t.engagement.rate)} — ${t.engagement.grade.label}`);
+    lines.push(`  Reach:       ${t.reach.viewsPerFollower.toFixed(2)}x followers — ${t.reach.grade.label} (${t.reach.tier})`);
+    lines.push(`  Consistency: ${t.consistency.cv.toFixed(2)} — ${t.consistency.grade.label}`);
+  }
+
+  if (d.warnings.length) {
+    lines.push('', 'FLAGS');
+    for (const w of d.warnings) lines.push(`  - ${w}`);
+  }
+  return lines.join('\n');
+}
+
+// ---------- events ----------
+function submitSearch() {
+  const handles = {
+    tiktok: el.tiktok.value.trim(),
+    instagram: el.instagram.value.trim(),
+    youtube: el.youtube.value.trim(),
+  };
+  if (!handles.tiktok && !handles.instagram && !handles.youtube) {
+    fail('Enter at least one handle.');
+    return;
+  }
+  opts.igAvgViews = null;   // a new creator's number shouldn't carry over
+  run(handles, { refresh: true });
+}
+
+el.form.addEventListener('submit', e => { e.preventDefault(); submitSearch(); });
+for (const k of ['tiktok', 'instagram', 'youtube']) {
+  el[k].addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); submitSearch(); }
+  });
+}
+
+el.ppm.addEventListener('change', () => {
+  opts.postsPerMonth = Math.max(1, Math.min(31, parseInt(el.ppm.value, 10) || 4));
+  el.ppm.value = opts.postsPerMonth;
+  rerun();
+});
+el.cpm.addEventListener('change', () => {
+  opts.cpm = Number(el.cpm.value) > 0 ? Number(el.cpm.value) : null;
+  rerun();
+});
+el.basis.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  opts.basis = btn.dataset.v;
+  [...el.basis.children].forEach(x => x.classList.toggle('on', x === btn));
+  rerun();
+});
+el.win.addEventListener('change', () => { opts.windowDays = el.win.value; rerun(); });
+el.fresh.addEventListener('change', () => { opts.includeFresh = el.fresh.checked; rerun(); });
+
+$('#copy').addEventListener('click', async () => {
+  await navigator.clipboard.writeText($('#summary').textContent);
+  const b = $('#copy');
+  b.textContent = 'Copied ✓';
+  setTimeout(() => { b.textContent = 'Copy summary'; }, 1400);
+});
+
+el.tiktok.focus();
+
+</script>
+</body>
+</html>
