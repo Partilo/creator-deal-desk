@@ -459,7 +459,9 @@ function render(d) {
   // Platform breakdown
   const share = Object.fromEntries(b.contributions.map(c => [c.platform, c.share]));
   $('#platforms').innerHTML = d.platforms.map(p => {
-    const isIg = p.platform === 'instagram';
+    // The hand-entry box is a fallback, not an override — once Instagram is
+    // measured, offering it would only invite replacing a real number.
+    const needsManualIg = p.platform === 'instagram' && p.source !== 'measured';
     const dim = p.perPost > 0 ? '' : ' dim';
     const pctShare = share[p.platform] ? (share[p.platform] * 100).toFixed(0) + '% of reach' : 'not counted';
     return `<div class="plat${dim}">
@@ -471,7 +473,7 @@ function render(d) {
       </div>
       <div class="platnum"><b>${fmt(p.perPost)}</b><span>per post</span></div>
       ${share[p.platform] ? `<div class="sharebar"><i class="${p.platform}" style="width:${(share[p.platform] * 100).toFixed(1)}%"></i></div>` : ''}
-      ${isIg ? `<div class="igInput">
+      ${needsManualIg ? `<div class="igInput">
         <label for="igAvg">Avg views per Reel</label>
         <input id="igAvg" type="number" min="0" step="1000" placeholder="e.g. 45000"
                value="${opts.igAvgViews || ''}" />
