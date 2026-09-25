@@ -217,6 +217,8 @@ html,body{margin:0;background:var(--bg);color:var(--ink);
   .platnum{grid-column:2/-1;text-align:left;margin-top:4px}
 }
 
+.credits{display:block;font-size:10px;color:var(--dim);text-transform:none;letter-spacing:0;margin-top:2px}
+
 </style>
 </head>
 <body>
@@ -370,6 +372,7 @@ const el = {
 };
 
 let searched = null;   // the handles we last analyzed
+let last = null;       // the last full response, so knobs don't refetch
 let opts = {
   basis: 'trimmed', postsPerMonth: 4, cpm: 3,
   igAvgViews: null, windowDays: '', includeFresh: false,
@@ -411,6 +414,7 @@ async function run(handles, { refresh = false } = {}) {
     });
     const data = await res.json();
     if (!data.ok) { fail(data.error || 'Nothing could be measured.'); return; }
+    last = data;
     render(data);
     show('result');
   } catch {
@@ -420,8 +424,63 @@ async function run(handles, { refresh = false } = {}) {
   }
 }
 
-/** Re-run with new knobs — scrapes are cached server-side, so this is instant. */
-function rerun() { if (searched) run(searched); }
+/** Negotiating numbers should be round: 47,312 is a spreadsheet, 47,000 is a deal. */
+function roundNegotiable(n) {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if (n >= 1e6) return Math.round(n / 1e5) * 1e5;
+  if (n >= 1e5) return Math.round(n / 1e4) * 1e4;
+  if (n >= 1e4) return Math.round(n / 1e3) * 1e3;
+  if (n >= 1e3) return Math.round(n / 1e2) * 1e2;
+  return Math.round(n / 10) * 10;
+}
+
+/**
+ * Recompute the deal from the response we already have.
+ *
+ * Instagram costs real credits per lookup, so the knobs must not refetch.
+ * Every platform's mean/median/trimmed/floor is already in the payload, so
+ * changing the basis, the posts per month or the CPM is pure arithmetic.
+ * Only the window and the fresh-posts toggle change which posts are in the
+ * sample, and those genuinely need the server.
+ */
+function recompute() {
+  if (!last) return;
+  const d = last;
+
+  for (const p of d.platforms) {
+    if (p.stats) p.perPost = p.stats[opts.basis] ?? p.stats.mean;
+    else if (p.source === 'manual') p.perPost = Number(opts.igAvgViews) > 0 ? Number(opts.igAvgViews) : 0;
+  }
+
+  const counted = d.platforms.filter(p => p.perPost > 0);
+  const raw = counted.reduce((t, p) => t + p.perPost, 0);
+  const perPost = roundNegotiable(raw);
+
+  d.blended = {
+    ...d.blended,
+    basis: opts.basis,
+    postsPerMonth: opts.postsPerMonth,
+    perPost,
+    perPostRaw: raw,
+    monthly: perPost * opts.postsPerMonth,
+    contributions: counted.map(p => ({
+      platform: p.platform,
+      perPost: p.perPost,
+      share: raw ? p.perPost / raw : 0,
+    })),
+  };
+
+  const monthly = d.blended.monthly;
+  d.pricing = Number(opts.cpm) > 0
+    ? { cpm: Number(opts.cpm), fee: (monthly / 1000) * Number(opts.cpm) }
+    : { cpm: null, fee: null };
+
+  render(d);
+}
+
+/** Knob changes are local arithmetic; only the sample controls hit the server. */
+function rerun() { recompute(); }
+function refetch() { if (searched) run(searched); }
 
 function show(which) {
   for (const k of ['empty', 'loading', 'error', 'result']) el[k].classList.add('hidden');
@@ -458,7 +517,11 @@ function render(d) {
   // already says "followers unavailable" next to the field that fixes it, so
   // don't spend a warning banner on it every single search.
   const EXPECTED = /^Instagram: couldn't read the profile/;
-  const shown = d.warnings.filter(w => !EXPECTED.test(w));
+  // This one is only emitted for a mean-based guarantee; after switching the
+  // basis locally it would otherwise linger and describe the wrong deal.
+  const MEAN_ONLY = /^TikTok: Only \d+% of their recent posts cleared/;
+  const shown = d.warnings.filter(w =>
+    !EXPECTED.test(w) && !(opts.basis !== 'mean' && MEAN_ONLY.test(w)));
   $('#warnings').innerHTML = shown.map(w => `<div class="warn">${escapeHtml(w)}</div>`).join('');
 
   // Platform breakdown
@@ -476,7 +539,9 @@ function render(d) {
           <a href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer" class="handle">@${escapeHtml(p.handle)}</a></div>
         <div class="platmeta">${p.followersKnown === false ? 'followers unavailable' : `${fmt(p.followers)} ${p.followerLabel || 'followers'}`} · ${escapeHtml(p.sampleNote)} · ${pctShare}</div>
       </div>
-      <div class="platnum"><b>${fmt(p.perPost)}</b><span>per post</span></div>
+      <div class="platnum"><b>${fmt(p.perPost)}</b><span>per post</span>${
+        typeof p.creditsRemaining === 'number'
+          ? `<span class="credits">${p.creditsRemaining} credits left</span>` : ''}</div>
       ${share[p.platform] ? `<div class="sharebar"><i class="${p.platform}" style="width:${(share[p.platform] * 100).toFixed(1)}%"></i></div>` : ''}
       ${needsManualIg ? `<div class="igInput">
         <label for="igAvg">Avg views per Reel</label>
@@ -601,7 +666,9 @@ function submitSearch() {
     return;
   }
   opts.igAvgViews = null;   // a new creator's number shouldn't carry over
-  run(handles, { refresh: true });
+  // Not a forced refresh: Instagram costs credits per lookup, so let the
+  // server's cache answer a repeat of the same creator.
+  run(handles);
 }
 
 el.form.addEventListener('submit', e => { e.preventDefault(); submitSearch(); });
@@ -627,8 +694,8 @@ el.basis.addEventListener('click', e => {
   [...el.basis.children].forEach(x => x.classList.toggle('on', x === btn));
   rerun();
 });
-el.win.addEventListener('change', () => { opts.windowDays = el.win.value; rerun(); });
-el.fresh.addEventListener('change', () => { opts.includeFresh = el.fresh.checked; rerun(); });
+el.win.addEventListener('change', () => { opts.windowDays = el.win.value; refetch(); });
+el.fresh.addEventListener('change', () => { opts.includeFresh = el.fresh.checked; refetch(); });
 
 $('#copy').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('#summary').textContent);
