@@ -434,19 +434,24 @@ function render(d) {
   const b = d.blended;
 
   $('#monthly').textContent = full(b.monthly);
+  // "cross-posts" and "blended" are only true of more than one platform.
+  // Said over a single-platform deal they read as though the tool mixed in
+  // something that wasn't entered.
   const names = d.platforms.filter(p => p.perPost > 0).map(p => PLATFORM_LABEL[p.platform]);
-  $('#formula').textContent =
-    `${b.postsPerMonth} cross-posts × ${full(b.perPost)} blended views` +
-    (names.length ? ` across ${names.join(' + ')}` : '') +
-    ` (${b.basis})`;
+  const many = names.length > 1;
+  $('#formula').textContent = many
+    ? `${b.postsPerMonth} cross-posts × ${full(b.perPost)} blended views across ${names.join(' + ')} (${b.basis})`
+    : `${b.postsPerMonth} posts × ${full(b.perPost)} views per post${names.length ? ` on ${names[0]}` : ''} (${b.basis})`;
 
   // Pricing
   $('#fee').textContent = d.pricing.fee ? money(d.pricing.fee) : '—';
   $('#feeSub').textContent = d.pricing.fee
-    ? `${money(d.pricing.fee / b.postsPerMonth)} per cross-post · ${full(b.monthly)} guaranteed views`
+    ? `${money(d.pricing.fee / b.postsPerMonth)} per ${many ? 'cross-post' : 'post'} · ${full(b.monthly)} guaranteed views`
     : 'Enter a target CPM';
 
-  $('#audience').textContent = d.audience ? `${fmt(d.audience)} combined audience` : '';
+  $('#audience').textContent = d.audience
+    ? `${fmt(d.audience)} ${many ? 'combined audience' : 'followers'}`
+    : '';
 
   // Instagram's profile lookup always fails from the server (Meta blocks
   // datacenter IPs), so that isn't news — it's how the tool works. The card
@@ -549,13 +554,14 @@ function summaryText(d) {
   const named = d.platforms.map(p => `${PLATFORM_LABEL[p.platform]} @${p.handle}`).join('  ·  ');
   lines.push(named, '');
 
+  const multi = d.platforms.filter(p => p.perPost > 0).length > 1;
   lines.push('DEAL');
-  lines.push(`  ${b.postsPerMonth} posts/month, 1 per week, cross-posted`);
-  lines.push(`  Blended per post:     ${full(b.perPost)} views   (${b.basis})`);
+  lines.push(`  ${b.postsPerMonth} posts/month, 1 per week${multi ? ', cross-posted' : ''}`);
+  lines.push(`  ${multi ? 'Blended per post:' : 'Per post:'}${' '.repeat(multi ? 5 : 13)}${full(b.perPost)} views   (${b.basis})`);
   lines.push(`  MONTHLY GUARANTEE:    ${full(b.monthly)} views`);
   if (d.pricing.fee) {
     lines.push(`  Fee:                  ${money(d.pricing.fee)}  (${money(d.pricing.cpm)} CPM)`);
-    lines.push(`  Per cross-post:       ${money(d.pricing.fee / b.postsPerMonth)}`);
+    lines.push(`  Per ${multi ? 'cross-post:      ' : 'post:            '} ${money(d.pricing.fee / b.postsPerMonth)}`);
   }
 
   lines.push('', 'PER PLATFORM');
