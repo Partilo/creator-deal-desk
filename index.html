@@ -447,8 +447,11 @@ function recompute() {
   if (!last) return;
   const d = last;
 
+  // The stats objects call the arithmetic mean "avg"; the basis calls it
+  // "mean". Without this mapping the Mean button yields a 0 guarantee.
+  const BASIS_KEY = { mean: 'avg', median: 'median', trimmed: 'trimmed', floor: 'floor' };
   for (const p of d.platforms) {
-    if (p.stats) p.perPost = p.stats[opts.basis] ?? p.stats.mean;
+    if (p.stats) p.perPost = p.stats[BASIS_KEY[opts.basis] || opts.basis] ?? p.stats.avg ?? 0;
     else if (p.source === 'manual') p.perPost = Number(opts.igAvgViews) > 0 ? Number(opts.igAvgViews) : 0;
   }
 
